@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Previsão do Tempo</title>
+    <!-- Link para o CSS seguindo a estrutura da image_f5a720.png -->
+    <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Previsão do Tempo</h1>
+        
+        <div class="search-box">
+            <input type="text" id="cityInput" placeholder="Digite a cidade (ex: São Paulo)">
+            <button id="searchBtn">Buscar</button>
+        </div>
+
+        <!-- Área onde os resultados aparecerão -->
+        <div id="weatherResult" class="hidden">
+            <h2 id="cityName"></h2>
+            <div class="weather-info">
+                <p><strong>Temperatura:</strong> <span id="temperature">--</span>°C</p>
+                <p><strong>Velocidade do Vento:</strong> <span id="windspeed">--</span> km/h</p>
+            </div>
+        </div>
+
+        <!-- Mensagens de erro -->
+        <p id="errorMessage" class="hidden error"></p>
+    </div>
+
+    <!-- Script seguindo a estrutura da image_f5a720.png -->
+    <script src="assets/js/api.js"></script>
+</body>
+</html>
