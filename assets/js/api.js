@@ -5,8 +5,19 @@
  * 3. Tratamento granular de erros (Rede vs API vs Input do Usuário)
  */
 
+/**
+ * @fileoverview Lógica principal para o aplicativo de Previsão do Tempo.
+ * Consome a API Open-Meteo para geocodificação e dados meteorológicos.
+ */
+
+// --- CACHE DE MEMÓRIA ---
+/**
+ * Armazena a última busca para evitar requisições redundantes.
+ * @type {Object|null}
+ */
+let weatherCache = null;
+
 // --- MAPEAMENTO DE DOMÍNIO (WMO Weather Interpretation Codes) ---
-// Traduz o código numérico da API para descrições legíveis e ícones específicos.
 const weatherDictionary = {
     0: { desc: 'Céu limpo', iconDay: 'wi-day-sunny.svg', iconNight: 'wi-night-clear.svg' },
     1: { desc: 'Predominantemente limpo', iconDay: 'wi-day-cloudy.svg', iconNight: 'wi-night-alt-cloudy.svg' },
@@ -20,7 +31,6 @@ const weatherDictionary = {
     63: { desc: 'Chuva moderada', iconDay: 'wi-rain.svg', iconNight: 'wi-rain.svg' },
     71: { desc: 'Neve leve', iconDay: 'wi-day-snow.svg', iconNight: 'wi-night-alt-snow.svg' },
     95: { desc: 'Tempestade', iconDay: 'wi-thunderstorm.svg', iconNight: 'wi-thunderstorm.svg' },
-    // Fallback genérico para códigos não mapeados
     default: { desc: 'Clima indefinido', iconDay: 'wi-na.svg', iconNight: 'wi-na.svg' }
 };
 
@@ -38,41 +48,102 @@ const elements = {
     icon: document.getElementById('weatherIcon')
 };
 
-// --- LISTENERS DE EVENTOS ---
-elements.btn.addEventListener('click', handleSearch);
-elements.input.addEventListener('keypress', (e) => {
+// --- LISTENERS ---
+if (elements.btn) elements.btn.addEventListener('click', handleSearch);
+if (elements.input) elements.input.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') handleSearch();
 });
 
-// --- FUNÇÃO PRINCIPAL ORQUESTRADORA ---
+/**
+ * Valida o nome da cidade inserido pelo usuário.
+ * 
+ * @param {string} city - O nome da cidade capturado do campo de input.
+ * @returns {boolean} Retorna true se a validação for bem-sucedida.
+ * @throws {Error} Lança 'EMPTY_INPUT' se o campo estiver vazio ou 'INVALID_CITY_NAME' se contiver números.
+ * 
+ * @example
+ * validateCityInput("São Paulo"); // Retorna true
+ * validateCityInput("SP 123"); // Lança Error('INVALID_CITY_NAME')
+ */
+function validateCityInput(city) {
+    if (!city || city.trim() === '') throw new Error('EMPTY_INPUT');
+    if (/\d/.test(city)) throw new Error('INVALID_CITY_NAME');
+    return true;
+}
+
+/**
+ * Busca as coordenadas geográficas de uma cidade utilizando a API de Geocodificação Open-Meteo.
+ * 
+ * @async
+ * @param {string} city - O nome da cidade a ser pesquisada.
+ * @returns {Promise<Object>} Um objeto contendo os dados geográficos, incluindo latitude e longitude.
+ * @throws {Error} Lança 'RATE_LIMIT_EXCEEDED' se houver muitas requisições ou 'CITY_NOT_FOUND' se a cidade não existir.
+ * 
+ * @example
+ * const coordenadas = await fetchCoordinates("Curitiba");
+ * console.log(coordenadas.latitude); // Retorna a latitude em formato numérico
+ */
+async function fetchCoordinates(city) {
+    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=pt`;
+    const response = await fetch(url);
+    
+    if (response.status === 429) throw new Error('RATE_LIMIT_EXCEEDED');
+    if (!response.ok) throw new Error('API_ERROR');
+    
+    const data = await response.json();
+    if (!data.results || data.results.length === 0) throw new Error('CITY_NOT_FOUND');
+    
+    return data.results[0];
+}
+
+/**
+ * Busca os dados meteorológicos atuais baseados em coordenadas geográficas.
+ * 
+ * @async
+ * @param {number} lat - A latitude do local (ex: -23.55).
+ * @param {number} lon - A longitude do local (ex: -46.63).
+ * @returns {Promise<Object>} Objeto JSON com as condições climáticas atuais, como temperatura e direção do vento.
+ * @throws {Error} Lança 'API_ERROR' caso a API falhe ou ocorra um problema no servidor remoto.
+ * 
+ * @example
+ * const clima = await fetchWeather(-23.55, -46.63);
+ * console.log(clima.current_weather.temperature); // Exibe a temperatura atual
+ */
+async function fetchWeather(lat, lon) {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=auto`;
+    const response = await fetch(url);
+    
+    if (!response.ok) throw new Error('API_ERROR');
+    return await response.json();
+}
+
+/**
+ * Orquestra o fluxo de busca, chamando as validações, APIs e atualizações de UI.
+ * Implementa um cache simples para evitar chamadas duplicadas consecutivas.
+ * 
+ * @async
+ * @returns {Promise<void>}
+ */
 async function handleSearch() {
     const city = elements.input.value.trim();
     
-    // 1. Validação de campo vazio
-    if (!city) {
-        showError('Por favor, informe o nome de uma cidade válida.');
-        return;
-    }
-
-    // 2. NOVA VALIDAÇÃO: Bloqueia qualquer número na string
-    // A regex /\d/ procura por dígitos (0-9). O test() retorna true se achar algum.
-    const containsNumber = /\d/.test(city);
-    if (containsNumber) {
-        showError('Nomes de cidades não contêm números. Digite novamente.');
-        return;
-    }
-
-    setLoadingState(true);
-
     try {
-        // 1. Busca as coordenadas
-        const geoData = await fetchCoordinates(city);
-        if (!geoData) throw new Error('CITY_NOT_FOUND');
+        validateCityInput(city);
+        
+        // Uso de cache: se a cidade for a mesma da última busca, não chama a API novamente
+        if (weatherCache && weatherCache.city.toLowerCase() === city.toLowerCase()) {
+            updateUI(weatherCache.geo, weatherCache.weather);
+            return;
+        }
 
-        // 2. Com as coordenadas, busca o clima atual
+        setLoadingState(true);
+
+        const geoData = await fetchCoordinates(city);
         const weatherData = await fetchWeather(geoData.latitude, geoData.longitude);
 
-        // 3. Atualiza a Interface do Usuário
+        // Atualiza o cache
+        weatherCache = { city: city, geo: geoData, weather: weatherData };
+
         updateUI(geoData, weatherData);
 
     } catch (error) {
@@ -82,62 +153,21 @@ async function handleSearch() {
     }
 }
 
-// --- SERVIÇOS DE API ---
-// Isolamos a lógica de requisição para facilitar futuros testes unitários (Mocking).
-async function fetchCoordinates(city) {
-    try {
-        const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=pt`;
-        const response = await fetch(url);
-        
-        if (!response.ok) throw new Error('API_ERROR'); // Erro 500 ou 400 da API
-        
-        const data = await response.json();
-        return data.results ? data.results[0] : null;
-    } catch (err) {
-        // Se falhar no fetch (ex: sem internet), o erro original é capturado aqui
-        if (err.message === 'API_ERROR') throw err;
-        throw new Error('NETWORK_ERROR');
-    }
-}
-
-async function fetchWeather(lat, lon) {
-    try {
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=auto`;
-        const response = await fetch(url);
-        
-        if (!response.ok) throw new Error('API_ERROR');
-        
-        return await response.json();
-    } catch (err) {
-        if (err.message === 'API_ERROR') throw err;
-        throw new Error('NETWORK_ERROR');
-    }
-}
-
 // --- ATUALIZAÇÃO DA INTERFACE ---
 function updateUI(geoInfo, weatherInfo) {
     const current = weatherInfo.current_weather;
     const isDay = current.is_day === 1;
     
-    // Obtém os dados do dicionário (ou fallback se o código for muito raro)
     const weatherDetails = weatherDictionary[current.weathercode] || weatherDictionary.default;
     const iconFileName = isDay ? weatherDetails.iconDay : weatherDetails.iconNight;
 
-    // Atualiza Textos
     elements.cityName.textContent = `${geoInfo.name}, ${geoInfo.admin1 || geoInfo.country}`;
     elements.temp.textContent = Math.round(current.temperature);
     elements.desc.textContent = weatherDetails.desc;
-    
-    // Atualiza Ícone
     elements.icon.src = `assets/icons/${iconFileName}`;
-    
-    // Gera a data e hora formatada
     elements.date.textContent = generateFormattedDate();
 
-    // Altera o tema Dia/Noite
     document.body.className = isDay ? 'theme-day' : 'theme-night';
-
-    // Exibe o card
     elements.result.classList.remove('hidden');
 }
 
@@ -151,11 +181,10 @@ function generateFormattedDate() {
 }
 
 function handleError(error) {
-    console.error('[WeatherApp Error]:', error); // Log técnico para debug
+    console.error('[WeatherApp Error]:', error); 
 
     let userMessage = 'Ocorreu um erro inesperado. Tente novamente.';
     
-    // Tradução do erro técnico para uma mensagem amigável ao usuário (UX)
     switch(error.message) {
         case 'CITY_NOT_FOUND':
             userMessage = 'Cidade não encontrada. Verifique a ortografia e tente novamente.';
@@ -165,6 +194,12 @@ function handleError(error) {
             break;
         case 'API_ERROR':
             userMessage = 'O serviço de clima está temporariamente indisponível.';
+            break;
+        case 'INVALID_CITY_NAME':
+            userMessage = 'Nomes de cidades não contêm números. Digite novamente.';
+            break;
+        case 'EMPTY_INPUT':
+            userMessage = 'Por favor, informe o nome de uma cidade válida.';
             break;
     }
     
