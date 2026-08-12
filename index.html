@@ -4,24 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Previsão do Tempo</title>
-    <!-- Link para o CSS seguindo a estrutura da image_f5a720.png -->
     <link rel="stylesheet" href="assets/css/styles.css">
 </head>
-<body>
+<body class="theme-day"> <!-- Classe padrão para transição de cores -->
     <div class="container">
         <h1>Previsão do Tempo</h1>
         
         <div class="search-box">
-            <input type="text" id="cityInput" placeholder="Digite a cidade (ex: São Paulo)">
+            <input type="text" id="cityInput" placeholder="Digite a cidade (ex: São Paulo)" autocomplete="off">
             <button id="searchBtn">Buscar</button>
         </div>
 
-        <!-- Área onde os resultados aparecerão -->
+        <!-- Estado de Carregamento (UX Loading State) -->
+        <div id="loadingState" class="hidden">Buscando informações...</div>
+
+        <!-- Resultados -->
         <div id="weatherResult" class="hidden">
             <h2 id="cityName"></h2>
-            <div class="weather-info">
-                <p><strong>Temperatura:</strong> <span id="temperature">--</span>°C</p>
-                <p><strong>Velocidade do Vento:</strong> <span id="windspeed">--</span> km/h</p>
+            <p id="currentDate" class="date-text"></p>
+            
+            <div class="weather-card">
+                <!-- Ícone do clima -->
+                <img id="weatherIcon" src="" alt="Ícone do clima" class="weather-icon">
+                
+                <div class="weather-info">
+                    <p class="temperature"><span id="temperature">--</span>°C</p>
+                    <p id="weatherDescription" class="description">--</p>
+                </div>
             </div>
         </div>
 
@@ -29,7 +38,6 @@
         <p id="errorMessage" class="hidden error"></p>
     </div>
 
-    <!-- Script seguindo a estrutura da image_f5a720.png -->
     <script src="assets/js/api.js"></script>
 </body>
 </html>
