@@ -1,78 +1,154 @@
-# 🌤️ Previsão do Tempo API
+# 🌤️ Projeto Clima — Previsão do Tempo com JavaScript Vanilla
 
-Um aplicativo web rápido e responsivo de Previsão do Tempo construído para demonstrar fundamentos avançados de desenvolvimento de software e consumo de APIs externas.
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
+![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
+![Jest](https://img.shields.io/badge/Jest-C21325?style=for-the-badge&logo=jest&logoColor=white)
+![NodeJS](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
 
-## 🎯 Objetivo
-O objetivo deste projeto é demonstrar proficiência em **JavaScript Vanilla**, manipulação da DOM, tratamento de erros resiliente, e chamadas assíncronas (Fetch API), tudo isso sem depender de frameworks externos. A interface foi desenhada para ser limpa e intuitiva, suportando transições de tema dinâmicas (Dia/Noite).
+Uma aplicação web moderna, responsiva e performática de previsão do tempo, desenvolvida sem o uso de frameworks adicionais no Front-end. O projeto demonstra boas práticas de engenharia de software, consumo assíncrono de APIs externas, tratamento resiliente de exceções, persistência em cache e testes automatizados com Jest.
 
-## 🚀 Tecnologias Utilizadas
-- **HTML5:** Semântica estruturada.
-- **CSS3:** Variáveis nativas (Custom Properties), layout responsivo (Flexbox) e transições suaves.
-- **JavaScript (ES6+):** Async/Await, Modularidade, Tratamento de Exceções e Expressões Regulares (Regex).
-- **Jest:** Suíte de testes unitários para garantir a confiabilidade das requisições e validações.
-- **JSDoc:** Documentação estruturada do código-fonte.
+---
 
-## 🔌 APIs Externas
-Este projeto consome dados da [Open-Meteo API](https://open-meteo.com/), utilizando dois endpoints distintos:
-1. **Geocoding API:** Para converter o nome da cidade inserido em coordenadas (Latitude e Longitude).
-2. **Weather Forecast API:** Para obter os dados climáticos em tempo real baseados nas coordenadas.
+## 📌 Índice
+- [Visão Geral](#-visão-geral)
+- [Funcionalidades Principais](#-funcionalidades-principais)
+- [Arquitetura & Boas Práticas](#-arquitetura--boas-práticas)
+- [Tecnologias Utilizadas](#-tecnologias-utilizadas)
+- [Estrutura de Pastas](#-estrutura-de-pastas)
+- [Como Executar o Projeto](#-como-executar-o-projeto)
+- [Suíte de Testes](#-suíte-de-testes)
+- [Licença](#-licença)
+
+---
+
+## 📖 Visão Geral
+
+O **Projeto Clima** permite consultar dados meteorológicos em tempo real de qualquer cidade do mundo. A aplicação realiza uma requisição dupla e orquestrada à API gratuita **Open-Meteo**:
+1. Converte o nome da cidade em coordenadas geográficas (Latitude e Longitude) via API de Geocodificação.
+2. Obtém a temperatura e as condições climáticas atuais utilizando essas coordenadas.
+
+---
+
+## ⚡ Funcionalidades Principais
+
+- **Busca por Cidade:** Consulta de dados meteorológicos de qualquer localização.
+- **Validação Antecipada (Sanitização de Input):** Bloqueio instantâneo de nomes vazios ou com caracteres numéricos (ex: "São Paulo 123"), evitando requisições desnecessárias.
+- **Cache de Dados (LocalStorage):** Armazenamento temporário dos dados da consulta por até 10 minutos. Se a mesma cidade for pesquisada dentro do prazo, os dados são carregados do navegador sem consumir a rede.
+- **Tema Dinâmico (Dia/Noite):** Alternância automática do visual da página (cores e fundo) com base no horário do local pesquisado (`is_day`).
+- **Mapeamento de Clima Visual:** Tradução técnica dos códigos WMO da API para descrições em Português e exibição dos ícones correspondentes (Weather Icons).
+- **Interface Responsiva:** Layout adaptável para dispositivos móveis e desktops utilizando CSS puro.
+
+---
+
+## 📐 Arquitetura & Boas Práticas
+
+- **Single Responsibility Principle (SRP):** Funções pequenas e com responsabilidades bem isoladas (Validação, Fetching, UI, Cache).
+- **Tratamento Granular de Erros:** Respostas visuais amigáveis para falhas de rede, limites de requisições (429), respostas nulas e erros internos de servidor (500).
+- **Documentação com JSDoc:** Código inteiramente documentado indicando parâmetros (`@param`), tipos de retornos (`@returns`), exceções lançadas (`@throws`) e exemplos práticos (`@example`).
+
+---
+
+## 🛠️ Tecnologias Utilizadas
+
+| Tecnologia | Finalidade |
+| :--- | :--- |
+| **HTML5** | Estruturação semântica da interface web |
+| **CSS3** | Estilização, variáveis CSS nativas e responsividade |
+| **JavaScript (ES6+)** | Lógica de programação, consumo de APIs (Fetch) e manipulação do DOM |
+| **Jest** | Framework de testes unitários em JavaScript |
+| **Open-Meteo API** | Provedor externo de geolocalização e dados meteorológicos |
+
+---
 
 ## 📁 Estrutura de Pastas
+
 ```text
 PROJETO_CLIMA/
+│
 ├── assets/
 │   ├── css/
-│   │   └── styles.css      # Estilos e temas (Dia/Noite)
-│   ├── icons/              # Weather Icons (SVG)
+│   │   └── styles.css      # Estilização global e temas Dia/Noite
+│   ├── icons/              # Ícones meteorológicos em formato SVG
 │   └── js/
-│       └── api.js          # Lógica principal documentada com JSDoc
+│       └── api.js          # Lógica principal, requisições e Cache
+│
 ├── tests/
 │   └── api.test.js         # Suíte de testes unitários com Jest
-├── index.html              # Ponto de entrada da aplicação
-├── package.json            # Dependências e scripts de teste
-└── README.md               # Documentação do projeto
+│
+├── .gitignore              # Arquivos ignorados pelo Versionamento Git
+├── index.html              # Interface estrutural principal
+├── package.json            # Configurações do projeto Node e scripts de teste
+└── README.md               # Documentação completa do projeto
 
 
-⚙️ Como Executar o Projeto
-Clone este repositório:
+🚀 Como Executar o Projeto
+Pré-requisitos
+Para apenas utilizar a aplicação, basta ter um navegador web atualizado (Chrome, Edge, Firefox, Safari).
+
+Para rodar a suíte de testes unitários, é necessário ter o Node.js instalado em sua máquina.
+
+Passo a Passo
+Clonar o Repositório:
 
 Bash
-git clone [https://github.com/SEU-USUARIO/projeto_clima.git](https://github.com/SEU-USUARIO/projeto_clima.git)
-Abra o arquivo index.html em qualquer navegador web moderno.
+git clone [https://github.com/SEU_USUARIO/projeto_clima.git](https://github.com/SEU_USUARIO/projeto_clima.git)
+cd projeto_clima
+Abrir a Aplicação:
 
-Para rodar a suíte de testes:
+Basta dar um duplo clique no arquivo index.html ou abri-lo utilizando a extensão Live Server no VS Code.
 
-Certifique-se de ter o Node.js instalado.
+Testar o Cache no Navegador:
 
-Instale as dependências: npm install
+Digite uma cidade (ex: Ubatuba) e clique em Buscar.
 
-Execute os testes: npm test
+Abra o Console do Desenvolvedor (F12 -> Console).
 
-💡 Melhorias Implementadas
-Validação de Input: Bloqueio de submissões vazias ou contendo números.
+Recarregue a página (F5) e digite a mesma cidade novamente.
 
-Caching: Sistema leve em memória para evitar requisições duplicadas.
+Veja a mensagem: 📦 Retornando dados do Cache (sem gastar API)!
 
-Tratamento de Exceções: Respostas tratadas para erros de API (500), Rate Limits (429) e Falhas de Rede.
+🧪 Suíte de Testes
+Os testes unitários foram construídos com Jest para garantir que todas as funções funcionem isoladamente e com simulações de cenários de erro (Mocks).
 
-Testes Unitários: Cobertura de cenários ideais (Happy Path) e casos extremos (Edge Cases).
+Executando os Testes
+Instale as dependências de desenvolvimento e rode os testes no terminal:
+
+Bash
+# Instalar dependências
+npm install
+
+# Executar a suíte de testes
+npm test
+Cenários Cobertos nos Testes
+✅ Validação de entradas vazias ou contendo dígitos/números.
+
+✅ Retorno de dados em buscas bem-sucedidas.
+
+✅ Lançamento de exceção tratada para cidades inexistentes.
+
+✅ Tratamento de falhas de servidor (Erro 500) e erro de limite de requisições (Status 429).
+
+✅ Simulação de falhas de conexão/rede (Network Error).
+
+✅ Validação e expiração do Cache no LocalStorage (Tempo Limite de 10 minutos).
+
+📄 Licença
+Este projeto está sob a licença MIT — sinta-se livre para utilizar, estudar e aprimorar o código.
 
 
 ---
 
-### 4.5. Comandos Git para Versionamento
+### Passos Finais no Git (Branch `05_nova_feature` ou `06_readme`)
 
-Após revisar o código, rodar `npm test` no terminal para garantir que tudo continua passando, crie a nova branch e versione sua documentação:
+Com o `README.md` atualizado e todos os testes do Jest passando (após a limpeza da duplicação), versione as alterações finais no Git:
 
 ```bash
-# 1. Cria e muda para a nova branch de documentação
-git checkout -b 04_doc_review
+# 1. Adiciona o README atualizado
+git add README.md
 
-# 2. Adiciona o README e as atualizações do api.js
-git add README.md assets/js/api.js
+# 2. Faz o commit registrando a finalização da documentação
+git commit -m "docs: atualiza o README.md com estrutura completa, guia de execução e testes"
 
-# 3. Registra o commit
-git commit -m "docs: adiciona README padronizado, JSDoc nas funcoes e refatoracao com cache"
-
-# 4. Envia para o repositório remoto
-git push origin 04_doc_review
+# 3. Envia as alterações para o repositório remoto
+git push origin 05_nova_feature

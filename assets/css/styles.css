@@ -132,3 +132,29 @@ button:hover {
     color: var(--text-muted);
     margin: 20px 0;
 }
+
+/* --- ALERTAS DE RODAPÉ (PRIVACIDADE E LICENÇA) --- */
+.footer-alerts {
+    position: absolute;
+    bottom: 20px;
+    width: 100%;
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    padding: 0 20px;
+    line-height: 1.5;
+}
+
+.footer-alerts p {
+    margin-bottom: 5px;
+}
+
+.footer-alerts a {
+    color: var(--text-muted);
+    text-decoration: underline;
+    font-weight: bold;
+}
+
+.footer-alerts a:hover {
+    color: var(--text-main);
+}
