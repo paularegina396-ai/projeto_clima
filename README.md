@@ -81,8 +81,9 @@ PROJETO_CLIMA/
 ├── package.json            # Configurações do projeto Node e scripts de teste
 └── README.md               # Documentação completa do projeto
 
+---
 
-🚀 Como Executar o Projeto
+## 🚀 Como Executar o Projeto
 Pré-requisitos
 Para apenas utilizar a aplicação, basta ter um navegador web atualizado (Chrome, Edge, Firefox, Safari).
 
@@ -108,7 +109,8 @@ Recarregue a página (F5) e digite a mesma cidade novamente.
 
 Veja a mensagem: 📦 Retornando dados do Cache (sem gastar API)!
 
-🧪 Suíte de Testes
+---
+## 🧪 Suíte de Testes
 Os testes unitários foram construídos com Jest para garantir que todas as funções funcionem isoladamente e com simulações de cenários de erro (Mocks).
 
 Executando os Testes
@@ -135,20 +137,3 @@ Cenários Cobertos nos Testes
 
 📄 Licença
 Este projeto está sob a licença MIT — sinta-se livre para utilizar, estudar e aprimorar o código.
-
-
----
-
-### Passos Finais no Git (Branch `05_nova_feature` ou `06_readme`)
-
-Com o `README.md` atualizado e todos os testes do Jest passando (após a limpeza da duplicação), versione as alterações finais no Git:
-
-```bash
-# 1. Adiciona o README atualizado
-git add README.md
-
-# 2. Faz o commit registrando a finalização da documentação
-git commit -m "docs: atualiza o README.md com estrutura completa, guia de execução e testes"
-
-# 3. Envia as alterações para o repositório remoto
-git push origin 05_nova_feature
