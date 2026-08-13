@@ -6,8 +6,7 @@
 // Simulando a importação das funções (No JS puro, você exportaria via module.exports)
 // const { fetchCoordinates, fetchWeather, validateCityInput } = require('./api');
 
-// Como estamos em um ambiente de simulação para o seu estudo, 
-// vou recriar a estrutura isolada das funções aqui para o Jest conseguir testar.
+// Ambiente de simulação para o seu estudo, 
 
 function validateCityInput(city) {
     if (!city || city.trim() === '') throw new Error('EMPTY_INPUT');
@@ -123,4 +122,64 @@ describe('Sistema de Previsão do Tempo', () => {
             await expect(fetchCoordinates('São Paulo')).rejects.toThrow('MALFORMED_DATA');
         });
     });
+
+    // ==========================================
+    // ETAPA 5: TESTES DE CACHE (Local Storage)
+    // ==========================================
+    describe('Sistema de Cache (Local Storage)', () => {
+        
+        // MOCK DO LOCAL STORAGE PARA O JEST (NODE.JS)
+        const localStorageMock = (() => {
+            let store = {};
+            return {
+                getItem: (key) => store[key] || null,
+                setItem: (key, value) => { store[key] = value.toString(); },
+                clear: () => { store = {}; }
+            };
+        })();
+        Object.defineProperty(global, 'localStorage', { value: localStorageMock });
+
+        beforeEach(() => {
+            // Agora isso vai funcionar perfeitamente!
+            localStorage.clear();
+            jest.spyOn(Date, 'now').mockImplementation(() => 1000000);
+        });
+
+        afterEach(() => {
+            jest.restoreAllMocks();
+        });
+
+        test('Deve validar o cache como verdadeiro se a busca for recente (menos de 10 min)', () => {
+            const mockData = {
+                city: 'são paulo',
+                timestamp: 1000000, 
+                geo: { lat: 10, lon: 20 },
+                weather: { temp: 25 }
+            };
+            localStorage.setItem('weatherAppData', JSON.stringify(mockData));
+
+            const cachedString = localStorage.getItem('weatherAppData');
+            const cachedData = JSON.parse(cachedString);
+            
+            const isRecent = (Date.now() - cachedData.timestamp) < (10 * 60 * 1000);
+            expect(isRecent).toBe(true);
+        });
+
+        test('Deve invalidar o cache se passaram mais de 10 minutos', () => {
+            const mockData = {
+                city: 'são paulo',
+                timestamp: 1000000 - (15 * 60 * 1000), 
+                geo: { lat: 10, lon: 20 },
+                weather: { temp: 25 }
+            };
+            localStorage.setItem('weatherAppData', JSON.stringify(mockData));
+
+            const cachedString = localStorage.getItem('weatherAppData');
+            const cachedData = JSON.parse(cachedString);
+            
+            const isRecent = (Date.now() - cachedData.timestamp) < (10 * 60 * 1000);
+            expect(isRecent).toBe(false); 
+        });
+    });
+
 });

@@ -10,12 +10,46 @@
  * Consome a API Open-Meteo para geocodificação e dados meteorológicos.
  */
 
-// --- CACHE DE MEMÓRIA ---
+// --- CONFIGURAÇÕES DE CACHE ---
+const CACHE_KEY = 'weatherAppData';
+const CACHE_DURATION_MS = 10 * 60 * 1000; // 10 minutos (em milissegundos)
+
 /**
- * Armazena a última busca para evitar requisições redundantes.
- * @type {Object|null}
+ * Salva os dados da busca no Local Storage do navegador.
+ * @param {string} city - Nome da cidade.
+ * @param {Object} geoData - Coordenadas geográficas.
+ * @param {Object} weatherData - Dados climáticos.
  */
-let weatherCache = null;
+function saveToCache(city, geoData, weatherData) {
+    const dataToSave = {
+        city: city.toLowerCase(),
+        timestamp: Date.now(), // Grava o momento exato da busca
+        geo: geoData,
+        weather: weatherData
+    };
+    localStorage.setItem(CACHE_KEY, JSON.stringify(dataToSave));
+}
+
+/**
+ * Recupera os dados do cache se forem da mesma cidade e ainda estiverem recentes.
+ * @param {string} city - Nome da cidade buscada.
+ * @returns {Object|null} Retorna os dados se o cache for válido, ou null se estiver expirado/vazio.
+ */
+function getValidCache(city) {
+    const cachedString = localStorage.getItem(CACHE_KEY);
+    if (!cachedString) return null;
+
+    const cachedData = JSON.parse(cachedString);
+    const isSameCity = cachedData.city === city.toLowerCase();
+    const isRecent = (Date.now() - cachedData.timestamp) < CACHE_DURATION_MS;
+
+    if (isSameCity && isRecent) {
+        console.log('📦 Retornando dados do Cache (sem gastar API)!');
+        return cachedData;
+    }
+
+    return null; // Cache expirado ou cidade diferente
+}
 
 // --- MAPEAMENTO DE DOMÍNIO (WMO Weather Interpretation Codes) ---
 const weatherDictionary = {
@@ -119,7 +153,7 @@ async function fetchWeather(lat, lon) {
 
 /**
  * Orquestra o fluxo de busca, chamando as validações, APIs e atualizações de UI.
- * Implementa um cache simples para evitar chamadas duplicadas consecutivas.
+ * Implementa validação de Local Storage para evitar chamadas duplicadas.
  * 
  * @async
  * @returns {Promise<void>}
@@ -130,19 +164,21 @@ async function handleSearch() {
     try {
         validateCityInput(city);
         
-        // Uso de cache: se a cidade for a mesma da última busca, não chama a API novamente
-        if (weatherCache && weatherCache.city.toLowerCase() === city.toLowerCase()) {
-            updateUI(weatherCache.geo, weatherCache.weather);
+        // 1. TENTA BUSCAR NO CACHE PRIMEIRO
+        const cachedInfo = getValidCache(city);
+        if (cachedInfo) {
+            updateUI(cachedInfo.geo, cachedInfo.weather);
             return;
         }
 
+        // 2. SE NÃO TEM CACHE, FAZ A REQUISIÇÃO REAL
         setLoadingState(true);
 
         const geoData = await fetchCoordinates(city);
         const weatherData = await fetchWeather(geoData.latitude, geoData.longitude);
 
-        // Atualiza o cache
-        weatherCache = { city: city, geo: geoData, weather: weatherData };
+        // 3. SALVA O RESULTADO NO CACHE PARA A PRÓXIMA VEZ
+        saveToCache(city, geoData, weatherData);
 
         updateUI(geoData, weatherData);
 
